@@ -1,20 +1,21 @@
 import React, { Component, Fragment } from 'react';
 import Avatar from '../Display/Avatar';
 import { Button, Form, FormGroup, Input, Label, Row, Col } from 'reactstrap';
+import { saveNewChar } from '../../ducks/character';
+import { connect } from 'react-redux';
 
-export default class CharacterForm extends Component {
+class CharacterForm extends Component {
   state = {
     charName: '',
     gender: '',
+    level: 1,
+    exp: 0,
     strength: 4,
     endurance: 4,
     speed: 4,
     wisdom: 4,
-    remainingPoints: 10
-  }
-
-  constructor(props) {
-    super(props);
+    remainingPoints: 10,
+    isDisabled: true
   }
 
   addStat = (stat) => {
@@ -23,6 +24,8 @@ export default class CharacterForm extends Component {
         this.setState({
           [stat]: this.state[stat] + 1,
           remainingPoints: this.state.remainingPoints - 1
+        }, () => {
+          this.validate()
         });
       }
     }
@@ -34,9 +37,22 @@ export default class CharacterForm extends Component {
         this.setState({
           [stat]: this.state[stat] - 1,
           remainingPoints: this.state.remainingPoints + 1
+        }, () => {
+          this.validate()
         });
       }
     }
+  }
+
+  saveChar = () => {
+    if (this.state.isDisabled) return;
+
+    this.setState({
+      remainingPoints: undefined,
+      isDisabled: undefined
+    }, () => {
+      this.props.saveNewChar(this.state);
+    });
   }
 
   handleInputChange = (event) => {
@@ -47,7 +63,21 @@ export default class CharacterForm extends Component {
     this.setState({
       [name]: value,
       charSeed: Math.random()
+    }, () => {
+      this.validate()
     });
+  }
+
+  validate = () => {
+    if (
+      this.state.charName
+      && this.state.gender
+      && this.state.remainingPoints === 0
+    ) {
+      this.setState({
+        isDisabled: false
+      });
+    }
   }
 
   render() {
@@ -138,7 +168,21 @@ export default class CharacterForm extends Component {
             </Row>
           </Col>
         </Row>
+        <br />
+        <Row>
+          <Col md={{ size: 6, offset: 3 }}>
+            <center><Button block disabled={this.state.isDisabled} onClick={this.saveChar}>Save Character</Button></center>
+          </Col>
+        </Row>
       </Fragment>
     );
   }
 }
+
+export default connect(
+  state => ({
+    ...state.character
+  }), {
+    saveNewChar
+  }
+)(CharacterForm);
